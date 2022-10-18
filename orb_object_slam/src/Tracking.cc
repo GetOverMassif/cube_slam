@@ -423,6 +423,7 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
 	}
 
 	// create frame and detect features!
+    // 创建帧和检测特征点
 	if (mState == NOT_INITIALIZED || mState == NO_IMAGES_YET)
 	{
 		if ((!mono_firstframe_truth_depth_init) || (mCurrentFrame.mnId > 0))
@@ -450,7 +451,9 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
 
 	if (mCurrentFrame.mnId == 0)
 		start_msg_seq_id = msg_seq_id;
+    
 	// if read offline txts, frame id must match!!!
+    // 查看检测到的立方体数量是否为 0
 	if (all_offline_object_cubes.size() > 0)
 	{
 		if ((mCurrentFrame.mnId > 0) && (msg_seq_id > 0))					// if msg_seq_id=0 may because the value is not set.
@@ -511,7 +514,8 @@ void Tracking::Track()
 					special_initialization = true;
 					// similar to stereo initialization, but directly create map point. don't create stereo right coordinate
 					// have less effect on g2o optimization.  because depth initialization is not accurate
-					MonoObjDepthInitialization();
+					// 单目物体深度初始化，与双目初始化类似，但是直接创建地图点....
+                    MonoObjDepthInitialization();
 				}
 			}
 			if (!special_initialization)
@@ -980,6 +984,7 @@ void Tracking::MonocularInitialization()
 		vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches)
 
 		// call important map initializer here. either homograpy or fundamental
+        // 在这里调用重要的地图初始化器，要么是单应矩阵，要么是基础矩阵
 		if (mpInitializer->Initialize(mCurrentFrame, mvIniMatches, Rcw, tcw, mvIniP3D, vbTriangulated))
 		{
 			for (size_t i = 0, iend = mvIniMatches.size(); i < iend; i++)
@@ -997,7 +1002,7 @@ void Tracking::MonocularInitialization()
 			Rcw.copyTo(Tcw.rowRange(0, 3).colRange(0, 3));
 			tcw.copyTo(Tcw.rowRange(0, 3).col(3));
 			mCurrentFrame.SetPose(Tcw);
-
+            // 创建单目初始地图
 			CreateInitialMapMonocular();
 		}
 	}
@@ -1542,6 +1547,7 @@ bool Tracking::NeedNewKeyFrame()
 	}
 }
 
+// TODO：检测物体长方体
 void Tracking::DetectCuboid(KeyFrame *pKF)
 {
 	cv::Mat pop_pose_to_ground;			  // pop frame pose to ground frame.  for offline txt, usually local ground.  for online detect, usually init ground.
@@ -1552,7 +1558,8 @@ void Tracking::DetectCuboid(KeyFrame *pKF)
 
 	if (whether_read_offline_cuboidtxt) // saved object txt usually is usually poped in local ground frame, not the global ground frame.
 	{
-		if (all_offline_object_cubes.size() == 0)
+		// 读取线下的长方体文本
+        if (all_offline_object_cubes.size() == 0)
 			return;
 		pop_pose_to_ground = InitToGround.clone(); // for kitti, I used InitToGround to pop offline.
 
@@ -1580,7 +1587,8 @@ void Tracking::DetectCuboid(KeyFrame *pKF)
 	}
 	else
 	{
-		std::string data_edge_data_dir = base_data_folder + "/edge_detection/LSD/";
+		// 在线进行长方体生成
+        std::string data_edge_data_dir = base_data_folder + "/edge_detection/LSD/";
 		std::string data_yolo_obj_dir = base_data_folder + "/mats/filter_match_2d_boxes_txts/";
 		char frame_index_c[256];
 		sprintf(frame_index_c, "%04d", (int)pKF->mnFrameId); // format into 4 digit
